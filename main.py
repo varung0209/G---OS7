@@ -26,7 +26,7 @@ def access_fl(file_name):
 	return question(speech_text)
 
 
-@ask.intent('access_file')
+@ask.intent('play_file')
 def play_music():
 
 
