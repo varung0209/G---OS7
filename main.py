@@ -28,10 +28,9 @@ def access_fl(file_name):
 
 @ask.intent('access_file')
 def play_music():
-f
 
 
-@ask.intent('AMAZON.StopIntent')
+@ask.intent('exit_session')
 def session_ended():
     return "{}", 200
 
