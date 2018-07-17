@@ -1,5 +1,8 @@
 import os
 import psutil
+import vlc
+import webbrowser
+import difflib
 
 from flask import Flask
 from flask_ask import Ask, question, statement
@@ -26,9 +29,11 @@ def access_fl(file_name):
 	return question(speech_text)
 
 
-@ask.intent('access_file')
+@ask.intent('')
 def play_music():
-f
+	p = vlc.MediaPlayer()
+	p.play()
+
 
 
 @ask.intent('AMAZON.StopIntent')
