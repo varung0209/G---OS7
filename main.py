@@ -31,12 +31,11 @@ def access_fl(file_name):
 @ask.intent('play_file')
 def play_music(file_name):
 	to_search = file_name + '.mp3'
-	path = ['/home/purva']
-	for root, dirnames, filenames in os.walk(path[0]):
-		for filename in filenames:
-			d = difflib.SequenceMatcher(None,filename, to_search).ratio()
-			if d>=0.6:
-					matches=(os.path.join(root, filename))
+	path = '/home/archeon/Music'
+	for filename in os.listdir(path):
+		d = difflib.SequenceMatcher(None, filename, to_search).ratio()
+		if d>=0.6:
+			matches=(os.path.join(path, filename))
 	webbrowser.open(matches) 
 
 
