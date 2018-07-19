@@ -1,7 +1,7 @@
 import os
 import psutil
 import webbrowser
-import difflib
+#import difflib
 import math
 
 from fuzzywuzzy import fuzz
@@ -13,6 +13,7 @@ from twilio.rest import TwilioRestClient
 TWILIO_PHONE_NUMBER = "+18053358898"
 WIML_INSTRUCTIONS_URL = "http://static.fullstackpython.com/phone-calls-python.xml"
 client = TwilioRestClient("AC7b97a7a6264813fafd695f02b7b071a5", "4502047c06369e5aa4f1a436d0787c88")
+homedir = os.environ['HOME']
 
 app = Flask(__name__)
 ask = Ask(app, "/")
@@ -57,12 +58,12 @@ def accessfile(file_name):
 
 @ask.intent('play_file')
 def play_music(file_type,file_name):
+	print(file_name)
 	dialog_state = get_dialog_state()
 	if dialog_state != 'COMPLETED':
 		return delegate()
 	if file_type == 'song' or file_type == 'music':
-		path = '/home/purva'
-		dir_path = os.path.dirname(path)
+		dir_path = os.path.dirname(homedir)
 		for root, dirs, files in os.walk(dir_path):
 			for file in files:
 				if file.endswith('.mp3'):
@@ -71,29 +72,38 @@ def play_music(file_type,file_name):
 						matches=(root + '/'+str(file))
 						speech_text = 'Playing on System'
 						webbrowser.open(matches)
+						return question(speech_text)
 					else:
 						speech_text = 'Unable to find file'
 		return question(speech_text)
 	if file_type == 'video' or file_type == 'movie':
-		path = '/home/purva'
-		dir_path = os.path.dirname(path)
+		dir_path = os.path.dirname(homedir)
 		for root, dirs, files in os.walk(dir_path):
 			for file in files:
-				if file.endswith('.mp4'):
-					d = fuzz.token_set_ratio(file, file_name)
+				file1 = file.replace(' ', '')
+				if file1.endswith('.mp4'):
+					d = fuzz.token_set_ratio(file1, file_name)
 					if d>=80:
 						matches=(root + '/'+str(file))
 						speech_text = 'Playing on System'
 						webbrowser.open(matches)
+						return question(speech_text)
 					else:
 						speech_text = 'Unable to find file'
 		return question(speech_text)
+	
 		
-#@ask.intent('execute_file')
-#def execute_file(file_name):
-	#os.system(start 'C:\pathtotool.exe -2 c:\data')
-	#speech_text = 'file running %s'%file_name
-	#return question(speech_text)
+@ask.intent('execute_file')
+def execute_file(file_name):
+	path = '/usr/bin'
+	for file in os.listdir(path):
+		d = fuzz.token_set_ratio(file, file_name)
+		if d>=70:
+			match = (path+ '/' + str(file))
+	subprocess.Popen(match)
+	speech_text = 'file running %s'%file_name
+	return question(speech_text)
+
 
 @ask.intent('phone_buzz')
 def call_my_phone():
