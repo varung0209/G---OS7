@@ -4,6 +4,8 @@ import webbrowser
 import difflib
 import math
 
+from fuzzywuzzy import fuzz
+from fuzzywuzzy import process
 from flask import Flask
 from flask_ask import Ask, statement, question, delegate,session
 from twilio.rest import TwilioRestClient
@@ -59,31 +61,34 @@ def play_music(file_type,file_name):
 	if dialog_state != 'COMPLETED':
 		return delegate()
 	if file_type == 'song' or file_type == 'music':
-		to_search = file_name + '.mp3'
-		path = '/home/archeon/Music'
-		for filename in os.listdir(path):
-			d = difflib.SequenceMatcher(None, filename, to_search).ratio()
-			if d>=0.6:
-				matches=(os.path.join(path, filename))
-				speech_text = 'Playing on System'
-				webbrowser.open(matches)
-			else :
-				speech_text = 'Unable to find file'
+		path = '/home/purva'
+		dir_path = os.path.dirname(path)
+		for root, dirs, files in os.walk(dir_path):
+			for file in files:
+				if file.endswith('.mp3'):
+					d = fuzz.token_set_ratio(file, file_name)
+					if d>=80:
+						matches=(root + '/'+str(file))
+						speech_text = 'Playing on System'
+						webbrowser.open(matches)
+					else:
+						speech_text = 'Unable to find file'
 		return question(speech_text)
 	if file_type == 'video' or file_type == 'movie':
-		to_search = file_name + '.mp4'
-		path = '/home/archeon/Videos'
-		for filename in os.listdir(path):
-			d = difflib.SequenceMatcher(None, filename, to_search).ratio()
-			if d>=0.6:
-				matches=(os.path.join(path, filename))
-				speech_text = 'Playing on System'
-				webbrowser.open(matches)
-			else :
-				speech_text = 'Unable to find file'
+		path = '/home/purva'
+		dir_path = os.path.dirname(path)
+		for root, dirs, files in os.walk(dir_path):
+			for file in files:
+				if file.endswith('.mp4'):
+					d = fuzz.token_set_ratio(file, file_name)
+					if d>=80:
+						matches=(root + '/'+str(file))
+						speech_text = 'Playing on System'
+						webbrowser.open(matches)
+					else:
+						speech_text = 'Unable to find file'
 		return question(speech_text)
-
-
+		
 #@ask.intent('execute_file')
 #def execute_file(file_name):
 	#os.system(start 'C:\pathtotool.exe -2 c:\data')
