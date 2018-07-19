@@ -5,23 +5,31 @@ import difflib
 import math
 
 from flask import Flask
-from flask_ask import Ask, question, statement
+from flask_ask import Ask, statement, question, delegate,session
+from twilio.rest import TwilioRestClient
+
+TWILIO_PHONE_NUMBER = "+18053358898"
+WIML_INSTRUCTIONS_URL = "http://static.fullstackpython.com/phone-calls-python.xml"
+client = TwilioRestClient("AC7b97a7a6264813fafd695f02b7b071a5", "4502047c06369e5aa4f1a436d0787c88")
 
 app = Flask(__name__)
 ask = Ask(app, "/")
 
+def get_dialog_state():
+	return session['dialogState']
+
 
 @ask.launch
 def launch():
-    speech_text = 'Launching Protocol'
-    return question(speech_text)
+	speech_text = 'Launching Protocol'
+	return question(speech_text)
 
 
 def sectohour(secs):
-    mm, ss = divmod(secs, 60) # function to convert from secs to hours
-    hh, mm = divmod(mm, 60)
-    hh1 = int(math.fabs(hh))
-    return (hh1, mm, ss)
+	mm, ss = divmod(secs, 60)
+	hh, mm = divmod(mm, 60)
+	hh1 = int(math.fabs(hh))
+	return (hh1, mm, ss)
 
 
 @ask.intent('retrieve_percentage')
@@ -37,6 +45,9 @@ def ret_battery():
 	
 @ask.intent('access_file')
 def accessfile(file_name):
+	dialog_state = get_dialog_state()
+	if dialog_state != 'COMPLETED':
+		return delegate()
 	os.system('gedit "{0}"'.format(file_name))
 	speech_text = 'file open %s'%file_name
 	return question(speech_text)
@@ -44,7 +55,10 @@ def accessfile(file_name):
 
 @ask.intent('play_file')
 def play_music(file_type,file_name):
-	if file_type == 'song':
+	dialog_state = get_dialog_state()
+	if dialog_state != 'COMPLETED':
+		return delegate()
+	if file_type == 'song' or file_type == 'music':
 		to_search = file_name + '.mp3'
 		path = '/home/archeon/Music'
 		for filename in os.listdir(path):
@@ -56,7 +70,7 @@ def play_music(file_type,file_name):
 			else :
 				speech_text = 'Unable to find file'
 		return question(speech_text)
-	if file_type == 'video':
+	if file_type == 'video' or file_type == 'movie':
 		to_search = file_name + '.mp4'
 		path = '/home/archeon/Videos'
 		for filename in os.listdir(path):
@@ -76,6 +90,12 @@ def play_music(file_type,file_name):
 	#speech_text = 'file running %s'%file_name
 	#return question(speech_text)
 
+@ask.intent('phone_buzz')
+def call_my_phone():
+	speech_text = "Calling your Phone now"
+	client.calls.create(to="+918147486031", from_=TWILIO_PHONE_NUMBER,url=WIML_INSTRUCTIONS_URL, method="GET")
+	return question(speech_text)
+
 
 @ask.intent('exit_session')
 def session_ended():
@@ -83,8 +103,8 @@ def session_ended():
 
 
 if __name__ == '__main__':
-    if 'ASK_VERIFY_REQUESTS' in os.environ:
-        verify = str(os.environ.get('ASK_VERIFY_REQUESTS', '')).lower()
-        if verify == 'false':
-            app.config['ASK_VERIFY_REQUESTS'] = False
-    app.run(debug=True, port=5001)
+	if 'ASK_VERIFY_REQUESTS' in os.environ:
+		verify = str(os.environ.get('ASK_VERIFY_REQUESTS', '')).lower()
+		if verify == 'false':
+			app.config['ASK_VERIFY_REQUESTS'] = False
+	app.run(debug=True, port=5001)
