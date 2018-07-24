@@ -13,8 +13,6 @@ TWILIO_PHONE_NUMBER = "+18053358898"
 WIML_INSTRUCTIONS_URL = "http://static.fullstackpython.com/phone-calls-python.xml"
 client = TwilioRestClient("AC7b97a7a6264813fafd695f02b7b071a5", "4502047c06369e5aa4f1a436d0787c88")
 homedir = os.environ['HOME']
-calllist = {"varun":"+918147486031","purva":"+919900376300",}
-names = calllist.keys
 
 app = Flask(__name__)
 ask = Ask(app, "/")
@@ -25,7 +23,7 @@ def get_dialog_state():
 
 @ask.launch
 def launch():
-	speech_text = 'Ghost Protocol Initiated'
+	speech_text = 'Launching Protocol'
 	return question(speech_text)
 
 
@@ -52,77 +50,82 @@ def accessfile(file_name):
 	dialog_state = get_dialog_state()
 	if dialog_state != 'COMPLETED':
 		return delegate()
-	os.system('gedit "{0}"'.format(file_name))
-	speech_text = 'File open in Editor %s'%file_name
+	subprocess.call(['notepad.exe', 'file_name'])
+	speech_text = 'file open %s'%file_name
 	return question(speech_text)
 
 
+def get_path():
+	f = psutil.disk_partitions()
+	n = len(f)
+	path = list()
+	for i in range(0, n):
+	if f[i][2] != '':
+		path.append(f[i][1])
+	return path
+	
 @ask.intent('play_file')
 def play_music(file_type,file_name):
+	print(file_name)
 	dialog_state = get_dialog_state()
 	if dialog_state != 'COMPLETED':
 		return delegate()
+	path = get_path()
 	if file_type == 'song' or file_type == 'music':
-		dir_path = os.path.dirname(homedir)
-		for root, dirs, files in os.walk(dir_path):
+		for root, dirs, files in os.walk(path):
 			for file in files:
-				if file.endswith('.mp3'):
-					d = fuzz.token_set_ratio(file, file_name)
+				file1 = file.replace(' ', '')
+				if file1.endswith('.mp3'):
+					d = fuzz.token_set_ratio(file1, file_name)
 					if d>=80:
 						matches=(root + '/'+str(file))
-						speech_text = 'Playing %s on System'%file_name
+						speech_text = 'Playing on System'
 						webbrowser.open(matches)
 						return question(speech_text)
 					else:
-						speech_text = 'Unable to find file %s'%file_name
+						speech_text = 'Unable to find file'
 		return question(speech_text)
 	if file_type == 'video' or file_type == 'movie':
-		dir_path = os.path.dirname(homedir)
-		for root, dirs, files in os.walk(dir_path):
+		for root, dirs, files in os.walk(path):
 			for file in files:
 				file1 = file.replace(' ', '')
 				if file1.endswith('.mp4'):
 					d = fuzz.token_set_ratio(file1, file_name)
 					if d>=80:
 						matches=(root + '/'+str(file))
-						speech_text = 'Playing %s on System'%file_name
+						speech_text = 'Playing on System'
 						webbrowser.open(matches)
 						return question(speech_text)
 					else:
-						speech_text = 'Unable to find file %s'%file_name
+						speech_text = 'Unable to find file'
 		return question(speech_text)
-
 	
-@ask.intent('run_file')
+		
+@ask.intent('execute_file')
 def execute_file(file_name):
-	dialog_state = get_dialog_state()
-	if dialog_state != 'COMPLETED':
-		return delegate()
-	path = '/usr/bin'
-	for file in os.listdir(path):
-		d = fuzz.token_set_ratio(file, file_name)
-		if d>=70:
-			match = (path+ '/' + str(file))
-	subprocess.Popen(match)
-	speech_text = '%s running on Device'%file_name
+	path = get_path()
+	for k in path:
+    for root, dirs, files in os.walk(k):
+            for file in files:
+                if file.endswith('.exe'):
+                    d = fuzz.token_set_ratio(file, file_name)
+                    if d >= 80:
+                        matches = (root + '/' + str(file))
+	subprocess.Popen(matches)
+	speech_text = 'file running %s'%file_name
 	return question(speech_text)
 
 
 @ask.intent('phone_buzz')
-def call_my_phone(phone_name):
-	dialog_state = get_dialog_state()
-	if dialog_state != 'COMPLETED':
-		return delegate()
-	for values in names():
-		if values.lower() == phone_name.lower():
-			speech_text = "Calling %s Now"%phone_name
-			client.calls.create(to=calllist[values], from_=TWILIO_PHONE_NUMBER,url=WIML_INSTRUCTIONS_URL, method="GET")
+def call_my_phone():
+	speech_text = "Calling your Phone now"
+	client.calls.create(to="+918147486031", from_=TWILIO_PHONE_NUMBER,url=WIML_INSTRUCTIONS_URL, method="GET")
 	return question(speech_text)
 
 
 @ask.intent('exit_session')
 def session_ended():
-    return statement("Ghost Busted \n See You Next Time")
+    return statement("Session ended")
 
 
 if __name__ == '__main__':
