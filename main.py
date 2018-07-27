@@ -52,7 +52,20 @@ def accessfile(file_name):
 	dialog_state = get_dialog_state()
 	if dialog_state != 'COMPLETED':
 		return delegate()
-	os.system('gedit "{0}"'.format(file_name))
+	name = file_name.split('.')
+	speech_text = None
+	dir_path = os.path.dirname(homedir)
+	for root, dirs, files in os.walk(dir_path):
+		for file in files:
+			if file.endswith('.'+name[1]):
+				d = fuzz.token_set_ratio(file, name[0])
+				if d>=80:
+					matches=(root + '/'+str(file))
+					os.system('gedit %s'%matches)
+					speech_text = 'File %s opened in Editor from path %s'%(name[0],matches)
+	if speech_text==None:
+		os.system('gedit %s'%file_name)
+		speech_text = 'File %s created in path %s'%(name[0],homedir)
 	speech_text = 'File open in Editor %s'%file_name
 	return question(speech_text)
 
