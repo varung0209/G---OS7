@@ -76,7 +76,6 @@ def accessfile(file_name):
 	
 @ask.intent('play_file')
 def play_music(file_type,file_name):
-	print(file_name)
 	dialog_state = get_dialog_state()
 	if dialog_state != 'COMPLETED':
 		return delegate()
