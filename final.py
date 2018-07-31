@@ -32,6 +32,15 @@ def sectohour(secs):
 	hh1 = int(math.fabs(hh))
 	return (hh1, mm, ss)
 
+def get_path():
+	f = psutil.disk_partitions()
+	n = len(f)
+	path = list()
+	for i in range(0, n):
+	if f[i][2] != '':
+		path.append(f[i][1])
+	return path
+
 @ask.launch
 def launch():
 	speech_text = 'Ghost Protocol Initiated.'
