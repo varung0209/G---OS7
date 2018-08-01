@@ -220,6 +220,18 @@ def open_web(webpage):
 	return question(speech_text)	
 
 
+@ask.intent('system_shutdown')
+def open_web(webpage):
+	dialog_state = get_dialog_state()
+	if dialog_state != 'COMPLETED':
+		return delegate()
+	speech_text = None
+		# for shutdown
+			os.system("shutdown /s /t 1") 
+		#for restart
+			os.system("shutdown /r /t 1")
+
+	
 @ask.intent('exit_session')
 def session_ended():
     return statement("Ghost Busted.\n See You Next Time")
