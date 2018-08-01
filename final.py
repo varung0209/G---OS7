@@ -3,22 +3,20 @@ import psutil
 import webbrowser
 import math
 import subprocess
+import platform
 
 from fuzzywuzzy import fuzz
 from flask import Flask
 from flask_ask import Ask, statement, question, delegate,session
-from twilio.rest import TwilioRestClient
+from twilio.rest import Client
 
 TWILIO_PHONE_NUMBER = "+18053358898"
 WIML_INSTRUCTIONS_URL = "http://static.fullstackpython.com/phone-calls-python.xml"
-client = TwilioRestClient("AC7b97a7a6264813fafd695f02b7b071a5", "4502047c06369e5aa4f1a436d0787c88")
-
-TWILIO_PHONE_NUMBER = "+18053358898"
-WIML_INSTRUCTIONS_URL = "http://static.fullstackpython.com/phone-calls-python.xml"
-client = TwilioRestClient("AC7b97a7a6264813fafd695f02b7b071a5", "4502047c06369e5aa4f1a436d0787c88")
-homedir = os.environ['HOME']
+client = Client("AC7b97a7a6264813fafd695f02b7b071a5", "4502047c06369e5aa4f1a436d0787c88")
 calllist = {"varun":"+918147486031","purva":"+919900376300","gaurav":"+919591337273",}
 names = calllist.keys
+pagelist = {"Google":"https://www.google.com/","Facebook":"https://www.facebook.com/","Twitter":"https://twitter.com/","Netflix":"https://www.netflix.com/in/","Prime Video":"https://www.primevideo.com/","Youtube":"https://www.youtube.com/","Quora":"https://www.quora.com/",}
+pages = pagelist.keys
 
 app = Flask(__name__)
 ask = Ask(app, "/")
@@ -37,9 +35,10 @@ def get_path():
 	n = len(f)
 	path = list()
 	for i in range(0, n):
-	if f[i][2] != '':
-		path.append(f[i][1])
+		if f[i][2] != '':
+			path.append(f[i][1])
 	return path
+
 
 @ask.launch
 def launch():
@@ -66,7 +65,7 @@ def accessfile(file_name):
 	name = file_name.split('.')
 	speech_text = None
 	if os.name == 'posix':
-		dir_path = os.path.dirname(homedir)
+		dir_path = os.path.dirname(os.environ['HOME'])
 		for root, dirs, files in os.walk(dir_path):
 			for file in files:
 				if file.endswith('.'+name[1]):
@@ -101,7 +100,7 @@ def play_music(file_type,file_name):
 	if dialog_state != 'COMPLETED':
 		return delegate()
 	if os.name == 'posix':
-		dir_path = os.path.dirname(homedir)
+		dir_path = os.path.dirname(os.environ['HOME'])
 		if file_type == 'song' or file_type == 'music':
 			for root, dirs, files in os.walk(dir_path):
 				for file in files:
@@ -130,7 +129,7 @@ def play_music(file_type,file_name):
 		path = get_path()
 		if file_type == 'song' or file_type == 'music':
 			for drive in path:
-				for root, dirs, files in os.walk(path):
+				for root, dirs, files in os.walk(drive):
 					for file in files:
 						if file.endswith('.mp3'):
 							d = fuzz.token_set_ratio(file, file_name)
@@ -144,7 +143,7 @@ def play_music(file_type,file_name):
 				return question(speech_text)
 		if file_type == 'video' or file_type == 'movie':
 			for drive in path:
-				for root, dirs, files in os.walk(path):
+				for root, dirs, files in os.walk(drive):
 					for file in files:
 						if file.endswith('.mp4'):
 							d = fuzz.token_set_ratio(file, file_name)
@@ -198,6 +197,27 @@ def call_my_phone(phone_name):
 			speech_text = "Calling %s Now."%phone_name
 			client.calls.create(to=calllist[values], from_=TWILIO_PHONE_NUMBER,url=WIML_INSTRUCTIONS_URL, method="GET")
 	return question(speech_text)
+
+
+@ask.intent('system_information')
+def disp_sys_info():
+	speech_text = "Running on %s in version %s on processor %s"%(platform.platform(),platform.machine(),platform.processor())
+	return question(speech_text)
+	
+
+@ask.intent('open_webpage')
+def open_web(webpage):
+	dialog_state = get_dialog_state()
+	if dialog_state != 'COMPLETED':
+		return delegate()
+	speech_text = None
+	for values in pages():
+		if values.lower() == webpage.lower():
+			webbrowser.open(pagelist[values])
+			speech_text = "Opened %s on your default browser"%webpage
+	if speech_text == None :
+		speech_text = "The web page's url is not found"
+	return question(speech_text)	
 
 
 @ask.intent('exit_session')

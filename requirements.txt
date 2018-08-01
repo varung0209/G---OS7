@@ -1,0 +1,17 @@
+cryptography==2.1.4
+Flask==0.12.1
+Flask-Ask==0.9.8
+fuzzywuzzy==0.16.0
+guacamole==0.9.2
+Jinja2==2.10
+psutil==5.4.6
+python-android==1.1.0
+python-apt==1.1.0b1+ubuntu0.16.4.1
+python-dateutil==2.7.3
+python-debian==0.1.27
+python-for-android==0.6.0
+python-Levenshtein==0.12.0
+python-systemd==231
+twilio==5.7.0
+virtualenv==15.0.1
+vlc
