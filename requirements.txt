@@ -15,3 +15,5 @@ python-systemd==231
 twilio==5.7.0
 virtualenv==15.0.1
 vlc
+winshell
+pypiWin32
