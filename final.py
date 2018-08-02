@@ -48,19 +48,22 @@ def get_path():
 
 @ask.launch
 def launch():
-	speech_text = 'Ghost Protocol Initiated. Hello User. What Can I Do For You?'
+	speech_text = 'Ghost Protocol Initiated. Hello There. What Can I Do For You?'
 	return question(speech_text)
 
 
 @ask.intent('retrieve_percentage')
 def ret_battery():
 	battery = psutil.sensors_battery()
+	if battery==None:
+		speech_text = 'Exception occured. The code is usually not executable on virtual machines. Sorry for the inconveninece'
+		return question(speech_text)
 	(hh, mm, ss) = sectohour(battery.secsleft)
 	try:
 		if(battery.power_plugged == True):
-			speech_text = 'Battery Percentage is %s Percent. \n Time left is %s hour %s minutes. \n Status : Charging.'%(battery.percent,hh, mm)
+			speech_text = 'Battery is at %s Percent. \n Time left is %s hour %s minutes. \n Status : Charging.'%(battery.percent,hh, mm)
 		else:
-			speech_text = 'Battery Percentage is %s Percent.\n Time left is %s hour %s minutes. \n Status : Discharging.'%(battery.percent,hh, mm)
+			speech_text = 'Battery is at %s Percent.\n Time left is %s hour %s minutes. \n Status : Discharging.'%(battery.percent,hh, mm)
 	except :
 		speech_text = 'Exception occured. The code is usually not executable on virtual machines. Sorry for the inconveninece'
 	return question(speech_text)
@@ -82,11 +85,10 @@ def accessfile(file_name):
 					if d>=80:
 						matches=(root + '/'+str(file))
 						os.system('gedit %s'%matches)
-						speech_text = 'File %s opened in Editor from path %s'%(name[0],matches)
+						speech_text = 'File %s is opened in Editor from path %s'%(name[0],matches)
 		if speech_text==None:
 			os.system('gedit %s'%file_name)
-			speech_text = 'File %s created in path %s'%(name[0],homedir)
-		speech_text = 'File open in Editor %s'%file_name
+			speech_text = 'File %s created in path %s'%(name[0],os.environ['HOME'])
 	elif os.name == 'nt':
 		path = get_path()
 		for drive in path:
@@ -150,7 +152,6 @@ def play_music(file_type,file_name):
 								return question(speech_text)
 							else:
 								speech_text = 'Unable to find %s'%file_name
-				return question(speech_text)
 		if file_type == 'video' or file_type == 'movie':
 			for drive in path:
 				for root, dirs, files in os.walk(drive):
