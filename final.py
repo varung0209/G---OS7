@@ -60,7 +60,7 @@ def ret_battery():
 
     battery = psutil.sensors_battery()
     if battery == None:
-        speech_text = 'Exception occured. The code is usually not executable on virtual machines. Sorry for the inconveninece'
+        speech_text = 'Exception occurred. I was unable to retrieve battery condition as your device seems to be a virtual machine. Sorry for the inconvenience'
         return question(speech_text)
     (hh, mm, ss) = sectohour(battery.secsleft)
     try:
@@ -69,7 +69,7 @@ def ret_battery():
         else:
             speech_text = 'Battery is at %s Percent.\n Time left is %s hour %s minutes. \n Status : Discharging.'%(battery.percent,hh, mm)
     except :
-        speech_text = 'Exception occured. The code is usually not executable on virtual machines. Sorry for the inconveninece'
+        speech_text = 'Exception occured. I was unable to retrieve battery condition as your device seems to be a virtual machine. Sorry for the inconveninece'
     return question(speech_text)
 
 
@@ -89,7 +89,10 @@ def accessfile(file_name):
                     if d >= 98:
                         matches = (root + '/'+str(file))
                         os.system('gedit %s'%matches)
-                        speech_text = 'File %s is opened in Editor from path %s'%(name[0],matches)
+                        file_path = matches.split('/')
+                        file_path.pop()
+                        folder = file_path.pop()
+                        speech_text = 'File %s is opened, from folder %s'%(name[0],folder)
         if speech_text==None:
             os.system('gedit %s'%file_name)
             speech_text = 'File %s created in path %s'%(name[0],os.environ['HOME'])
@@ -102,10 +105,13 @@ def accessfile(file_name):
                     if d >= 98:
                         matches=(root + '/'+str(file))
                         subprocess.call(['notepad.exe', matches])
-                        speech_text = 'File %s from path %s'%(name[0], matches)
+                        file_path = matches.split('/')
+                        file_path.pop()
+                        folder = file_path.pop()
+                        speech_text = 'File %s is opened, from folder %s'%(name[0], folder)
         if speech_text==None:
             subprocess.call(['notepad.exe', 'file_name'])
-            speech_text = 'File created %s in desktop'%file_name
+            speech_text = 'File created %s in desktop'%name[0]
     return question(speech_text)
     
 
@@ -122,10 +128,10 @@ def play_music(file_type,file_name):
             for root, dirs, files in os.walk(dir_path):
                 for file in files:
                     if file.endswith('.mp3'):
-                        d = fuzz.partial_ratio(file, file_name)
+                        d = fuzz.token_set_ratio(file, file_name)
                         if d >= 95:
                             matches=(root + '/'+str(file))
-                            speech_text = 'Playing %s on System'%file_name
+                            speech_text = 'Playing %s %s on System'%(file_type,file_name)
                             webbrowser.open(matches)
         if file_type == 'video' or file_type == 'movie':
             for root, dirs, files in os.walk(dir_path):
@@ -134,7 +140,7 @@ def play_music(file_type,file_name):
                         d = fuzz.token_set_ratio(file, file_name)
                         if d>=98:
                             matches=(root + '/'+str(file))
-                            speech_text = 'Playing %s on System'%file_name
+                            speech_text = 'Playing %s %s on System'%(file_type,file_name)
                             webbrowser.open(matches)
         if speech_text == None:
             speech_text = 'Unable to find %s'%file_name
@@ -151,7 +157,7 @@ def play_music(file_type,file_name):
                             d = fuzz.token_set_ratio(file1, file_name)
                             if d >= 98:
                                 matches = (root + '/'+str(file))
-                                speech_text = 'Playing %s on System'%file_name
+                                speech_text = 'Playing %s %s on System'%(file_type,file_name)
                                 webbrowser.open(matches)
         if file_type == 'video' or file_type == 'movie':
             for drive in path:
@@ -163,7 +169,7 @@ def play_music(file_type,file_name):
                             if d >= 98:
                                 matches = (root + '/'+str(file))
                                 webbrowser.open(matches)
-                                speech_text = 'Playing %s on System'%file_name
+                                speech_text = 'Playing %s %s on System'%(file_type,file_name)
         if speech_text == None:
             speech_text = 'Unable to find %s'%file_name
     return question(speech_text)
@@ -183,7 +189,6 @@ def execute_file(file_name):
                 match = (path+ '/' + str(file))
                 subprocess.Popen(match)
                 speech_text = '%s running on Device'%file_name
-                return question(speech_text)
     elif os.name == "nt":
         path = 'C://'
         for root, dirs, files in os.walk(path):
@@ -193,8 +198,7 @@ def execute_file(file_name):
                     if d == 100:
                         matches = (root + '/' + str(file))
                         subprocess.Popen(matches)
-                        speech_text = 'Program %s running'%file_name
-                        return question(speech_text)
+                        speech_text = '%s running on Device'%file_name
     if speech_text == None :
         speech_text = "Unable to find requested program."
     return question(speech_text)
@@ -208,10 +212,10 @@ def call_my_phone(phone_name):
     speech_text = None
     for values in names():
         if values.lower() == phone_name.lower():
-            speech_text = "Calling %s Now."%phone_name
+            speech_text = "Calling %s's phone Now."%phone_name
             client.calls.create(to=calllist[values], from_=TWILIO_PHONE_NUMBER,url=WIML_INSTRUCTIONS_URL, method="GET")
     if speech_text == None :
-        speech_text = "Unable to find Number associated to name %s in my data"%phone_name
+        speech_text = "Unable to find phone number associated to name %s in my data"%phone_name
     return question(speech_text)
 
 
@@ -259,12 +263,12 @@ def systemstatchange(status_sys):
             speech_text = "Screen Locked."
     elif os.name=="nt":
         if status_sys.lower() == "shutdown":
-            os.system("shutdown /s /t 2")
-            speech_text = "Shutdown in 2 Min. \nGhost Busted. See You Next Time"
+            os.system("shutdown /s /t 1")
+            speech_text = "Shutdown in 1 Min. \nGhost Busted. See You Next Time"
             return statement(speech_text)
         elif status_sys.lower() == "restart":
-            os.system("shutdown /r /t 2")
-            speech_text = "Restart in 2 Min. \nGhost Busted. See You Next Time"
+            os.system("shutdown /r /t 1")
+            speech_text = "Restart in 1 Min. \nGhost Busted. See You Next Time"
             return statement(speech_text)
         elif status_sys.lower() == "lock":
             ctypes.windll.user32.LockWorkStation()
