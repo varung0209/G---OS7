@@ -4,6 +4,11 @@ import webbrowser
 import math
 import subprocess
 import platform
+import ctypes
+
+if os.name=="nt":
+	import winshell
+
 
 from fuzzywuzzy import fuzz
 from flask import Flask
@@ -17,6 +22,7 @@ calllist = {"varun":"+918147486031","purva":"+919900376300","gaurav":"+919591337
 names = calllist.keys
 pagelist = {"Google":"https://www.google.com/","Facebook":"https://www.facebook.com/","Twitter":"https://twitter.com/","Netflix":"https://www.netflix.com/in/","Prime Video":"https://www.primevideo.com/","Youtube":"https://www.youtube.com/","Quora":"https://www.quora.com/",}
 pages = pagelist.keys
+speech_text = None
 
 app = Flask(__name__)
 ask = Ask(app, "/")
@@ -42,7 +48,7 @@ def get_path():
 
 @ask.launch
 def launch():
-	speech_text = 'Ghost Protocol Initiated.'
+	speech_text = 'Ghost Protocol Initiated. Hello User. What Can I Do For You?'
 	return question(speech_text)
 
 
@@ -50,10 +56,13 @@ def launch():
 def ret_battery():
 	battery = psutil.sensors_battery()
 	(hh, mm, ss) = sectohour(battery.secsleft)
-	if(battery.power_plugged == True):
-		speech_text = 'Battery Percentage is %s Percent. \n Time left is %s hour %s minutes. \n Status : Charging.'%(battery.percent,hh, mm)
-	else:
-		speech_text = 'Battery Percentage is %s Percent.\n Time left is %s hour %s minutes. \n Status : Discharging.'%(battery.percent,hh, mm)
+	try:
+		if(battery.power_plugged == True):
+			speech_text = 'Battery Percentage is %s Percent. \n Time left is %s hour %s minutes. \n Status : Charging.'%(battery.percent,hh, mm)
+		else:
+			speech_text = 'Battery Percentage is %s Percent.\n Time left is %s hour %s minutes. \n Status : Discharging.'%(battery.percent,hh, mm)
+	except :
+		speech_text = 'Exception occured. The code is usually not executable on virtual machines. Sorry for the inconveninece'
 	return question(speech_text)
 
 
@@ -90,7 +99,7 @@ def accessfile(file_name):
 						speech_text = 'File %s from path %s'%(name[0],matches)
 		if speech_text==None:
 			subprocess.call(['notepad.exe', 'file_name'])
-			speech_text = 'file created %s in desktop'%file_name
+			speech_text = 'File created %s in desktop'%file_name
 	return question(speech_text)
 
 
@@ -99,6 +108,7 @@ def play_music(file_type,file_name):
 	dialog_state = get_dialog_state()
 	if dialog_state != 'COMPLETED':
 		return delegate()
+	speech_text = None
 	if os.name == 'posix':
 		dir_path = os.path.dirname(os.environ['HOME'])
 		if file_type == 'song' or file_type == 'music':
@@ -135,11 +145,11 @@ def play_music(file_type,file_name):
 							d = fuzz.token_set_ratio(file, file_name)
 							if d>=80:
 								matches=(root + '/'+str(file))
-								speech_text = 'Playing on System'
+								speech_text = 'Playing %s on System'%file_name
 								webbrowser.open(matches)
 								return question(speech_text)
 							else:
-								speech_text = 'Unable to find file'
+								speech_text = 'Unable to find %s'%file_name
 				return question(speech_text)
 		if file_type == 'video' or file_type == 'movie':
 			for drive in path:
@@ -149,11 +159,11 @@ def play_music(file_type,file_name):
 							d = fuzz.token_set_ratio(file, file_name)
 							if d>=80:
 								matches=(root + '/'+str(file))
-								speech_text = 'Playing on System'
+								speech_text = 'Playing %S on System'%file_name
 								webbrowser.open(matches)
 								return question(speech_text)
 							else:
-								speech_text = 'Unable to find file'
+								speech_text = 'Unable to find %s'%file_name
 	return question(speech_text)
 
 
@@ -181,9 +191,9 @@ def execute_file(file_name):
 						if d >= 80:
 							matches = (root + '/' + str(file))
 							subprocess.Popen(matches)
-							speech_text = 'file running %s'%file_name
+							speech_text = 'Program %s running'%file_name
 	if speech_text == None :
-		speech_text = "Unable to find requested file."
+		speech_text = "Unable to find requested program."
 	return question(speech_text)
 
 
@@ -192,16 +202,22 @@ def call_my_phone(phone_name):
 	dialog_state = get_dialog_state()
 	if dialog_state != 'COMPLETED':
 		return delegate()
+	speech_text = None
 	for values in names():
 		if values.lower() == phone_name.lower():
 			speech_text = "Calling %s Now."%phone_name
 			client.calls.create(to=calllist[values], from_=TWILIO_PHONE_NUMBER,url=WIML_INSTRUCTIONS_URL, method="GET")
+	if speech_text == None :
+		speech_text = "Unable to find Number associated to name %s in my data"%phone_name
 	return question(speech_text)
 
 
 @ask.intent('system_information')
 def disp_sys_info():
-	speech_text = "Running on %s in version %s on processor %s"%(platform.platform(),platform.machine(),platform.processor())
+	try:
+		speech_text = "Running on %s in version %s on processor %s"%(platform.platform(),platform.machine(),platform.processor())
+	except:
+		speech_text = "Exception occured.Sorry for the inconveninece"
 	return question(speech_text)
 	
 
@@ -216,22 +232,58 @@ def open_web(webpage):
 			webbrowser.open(pagelist[values])
 			speech_text = "Opened %s on your default browser"%webpage
 	if speech_text == None :
-		speech_text = "The web page's url is not found"
+		speech_text = "The web page's url is not found in my data"
 	return question(speech_text)	
 
 
-@ask.intent('system_shutdown')
-def open_web(webpage):
+@ask.intent('system_status')
+def systemstatchange(status_sys):
 	dialog_state = get_dialog_state()
 	if dialog_state != 'COMPLETED':
 		return delegate()
 	speech_text = None
-		# for shutdown
-			os.system("shutdown /s /t 1") 
-		#for restart
-			os.system("shutdown /r /t 1")
+	if os.name=="posix":
+		if status_sys.lower() == "shutdown":
+			os.system("shutdown -h +1")
+			speech_text = "Shutdown in 1 Min. \nGhost Busted. See You Next Time"
+			return statement(speech_text) 
+		elif status_sys.lower() == "restart":
+			os.system("reboot")
+			speech_text = "Restart in 1 Min. \nGhost Busted. See You Next Time"
+			return statement(speech_text)
+		elif status_sys.lower() == "lock":
+			os.system("gnome-screensaver-command --lock")
+			speech_text = "Screen Locked."
+	elif os.name=="nt":
+		if status_sys.lower() == "shutdown":
+			os.system("shutdown /s /t 2")
+			speech_text = "Shutdown in 2 Min. \nGhost Busted. See You Next Time"
+			return statement(speech_text) 
+		elif status_sys.lower() == "restart":
+			os.system("shutdown /r /t 2")
+			speech_text = "Restart in 2 Min. \nGhost Busted. See You Next Time"
+			return statement(speech_text)
+		elif status_sys.lower() == "lock":
+			ctypes.windll.user32.LockWorkStation()
+			speech_text = "Screen Locked."				
+	else:
+		speech_text = "Unable to process request"
+	return question(speech_text)
 
-	
+@ask.intent('empty_recyclebin')
+def emptybin():
+	try:
+		if os.name=="posix":
+			os.system("rm -rf ~/.local/share/Trash/*")
+			speech_text = "Recycle Bin Empty"
+		elif os.name=="nt":
+			winshell.recycle_bin().empty(confirm=False,show_progress=False,sound=True)
+			speech_text = "Recycle Bin Empty"
+	except:
+		speech_text = "Exception occured. Sorry for the inconveninece"
+	return question(speech_text)
+
+
 @ask.intent('exit_session')
 def session_ended():
     return statement("Ghost Busted.\n See You Next Time")
