@@ -12,3 +12,7 @@ Instructions:
 	sudo python3 -m pip install -r requirements.txt
 2. Run the server on target device using:
 	python3 final.py
+<<<<<<< HEAD
+=======
+
+>>>>>>> alpha
