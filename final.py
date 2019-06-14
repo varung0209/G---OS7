@@ -15,10 +15,11 @@ from flask import Flask
 from flask_ask import Ask, statement, question, delegate,session
 from twilio.rest import Client
 
+
 TWILIO_PHONE_NUMBER = "+18053358898"
 WIML_INSTRUCTIONS_URL = "http://static.fullstackpython.com/phone-calls-python.xml"
 client = Client("AC7b97a7a6264813fafd695f02b7b071a5", "4502047c06369e5aa4f1a436d0787c88")
-calllist = {"varun":"+918147486031","purva":"+919900376300","gaurav":"+919591337273",}
+calllist = {"varun":"+918147486031","purva":"+919900376300","gaurav":"+919591337273","shibani":"+919845566563",}
 names = calllist.keys
 pagelist = {"Google":"https://www.google.com/","Facebook":"https://www.facebook.com/","Twitter":"https://twitter.com/","Netflix":"https://www.netflix.com/in/","Prime Video":"https://www.primevideo.com/","Youtube":"https://www.youtube.com/","Quora":"https://www.quora.com/",}
 pages = pagelist.keys
@@ -206,17 +207,22 @@ def execute_file(file_name):
 
 @ask.intent('phone_buzz')
 def call_my_phone(phone_name):
-    dialog_state = get_dialog_state()
-    if dialog_state != 'COMPLETED':
-        return delegate()
-    speech_text = None
-    for values in names():
-        if values.lower() == phone_name.lower():
-            speech_text = "Calling %s's phone Now."%phone_name
-            client.calls.create(to=calllist[values], from_=TWILIO_PHONE_NUMBER,url=WIML_INSTRUCTIONS_URL, method="GET")
-    if speech_text == None :
-        speech_text = "Unable to find phone number associated to name %s in my data"%phone_name
-    return question(speech_text)
+	dialog_state = get_dialog_state()
+	if dialog_state != 'COMPLETED':
+		return delegate()
+	speech_text = None
+	for values in names():
+		if values.lower() == phone_name.lower():
+			try:
+				client.calls.create(to=calllist[values], from_=TWILIO_PHONE_NUMBER,url=WIML_INSTRUCTIONS_URL, method="GET")
+				speech_text = "Calling %s's phone Now."%phone_name
+			except:
+				speech_text = "Requested Contact %s is not verified with calling service, Please verify and then proceed"%phone_name
+		else:
+			speech_text = "Requested Contact %s is not present in database. Please verify"%phone_name
+	if speech_text == None :
+		speech_text = "Unable to find phone number associated to name %s in system data"%phone_name
+	return question(speech_text)
 
 
 @ask.intent('system_information')
